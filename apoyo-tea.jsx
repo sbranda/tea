@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Home, MessageCircle, Calendar, Wind, ClipboardList, Settings,
   Plus, Trash2, Volume2, Check, ChevronLeft, ChevronRight, X,
-  User, Sparkles, Pencil
+  User, Sparkles, Pencil, Info, ChevronDown, ExternalLink
 } from "lucide-react";
 
 /* ---------- Temas de color ----------
@@ -365,8 +365,10 @@ export default function App() {
           <RutinasTab data={data} onSave={saveData} />
         ) : tab === "regulacion" ? (
           <RegulacionTab data={data} onSave={saveData} />
-        ) : (
+        ) : tab === "seguimiento" ? (
           <SeguimientoTab data={data} onSave={saveData} profileName={current.name} />
+        ) : (
+          <InformacionTab />
         )}
       </main>
     </div>
@@ -636,10 +638,11 @@ function TabNav({ tab, setTab }) {
     { id: "rutinas", label: "Rutinas", icon: Calendar },
     { id: "regulacion", label: "Regulación", icon: Wind },
     { id: "seguimiento", label: "Seguimiento", icon: ClipboardList },
+    { id: "info", label: "Información", icon: Info },
   ];
   return (
     <nav className="max-w-3xl mx-auto px-4 mt-4">
-      <div style={{ background: COLORS.surface, borderColor: COLORS.border }} className="border rounded-2xl p-1.5 grid grid-cols-4 gap-1">
+      <div style={{ background: COLORS.surface, borderColor: COLORS.border }} className="border rounded-2xl p-1.5 flex gap-1 overflow-x-auto">
         {tabs.map((t) => {
           const Icon = t.icon;
           const active = tab === t.id;
@@ -648,7 +651,7 @@ function TabNav({ tab, setTab }) {
               key={t.id}
               onClick={() => setTab(t.id)}
               style={{ background: active ? COLORS.primary : "transparent", color: active ? "#fff" : COLORS.textMuted }}
-              className="flex flex-col items-center gap-1 rounded-xl py-2.5 text-xs font-medium"
+              className="flex-1 shrink-0 min-w-[64px] flex flex-col items-center gap-1 rounded-xl py-2.5 text-xs font-medium"
             >
               <Icon size={18} />
               {t.label}
@@ -1369,6 +1372,116 @@ function SeguimientoTab({ data, onSave, profileName }) {
           </ul>
         )}
       </section>
+    </div>
+  );
+}
+
+/* ---------------- Información sobre TEA ---------------- */
+const INFO_SECTIONS = [
+  {
+    id: "que-es",
+    title: "¿Qué es el TEA?",
+    icon: "🧩",
+    content: [
+      "El Trastorno del Espectro Autista (TEA) es una condición del neurodesarrollo que afecta la forma en que una persona se comunica, interactúa socialmente, y percibe y responde al entorno sensorial.",
+      "Se lo llama \"espectro\" porque se manifiesta de manera muy distinta en cada persona: hay quienes necesitan apoyo intensivo en la vida diaria, y quienes viven de forma autónoma. No hay dos personas autistas iguales.",
+      "No es una enfermedad que se \"cura\", sino una forma diferente de procesar el mundo. Con los apoyos adecuados, cada persona puede desarrollar su potencial y bienestar.",
+    ],
+  },
+  {
+    id: "senales",
+    title: "Señales generales",
+    icon: "🔍",
+    content: [
+      "Estas son características que suelen observarse, agrupadas por área. No son una lista de diagnóstico: solo un profesional especializado puede evaluar y diagnosticar.",
+      "• Comunicación: diferencias en el lenguaje verbal o no verbal, dificultad para iniciar o sostener conversaciones, comprensión literal del lenguaje.",
+      "• Interacción social: dificultad para interpretar señales sociales o compartir intereses, preferencia por jugar o estar solo/a.",
+      "• Comportamientos e intereses: rutinas o intereses muy intensos y específicos, movimientos repetitivos (aleteo, balanceo), necesidad de previsibilidad.",
+      "• Sensorial: hiper o hiposensibilidad a sonidos, luces, texturas, olores o al tacto.",
+    ],
+  },
+  {
+    id: "consejos",
+    title: "Consejos prácticos para familias y docentes",
+    icon: "💡",
+    content: [
+      "• Anticipar los cambios: avisar con tiempo antes de una transición o cambio de planes, usando apoyos visuales cuando sea posible.",
+      "• Comunicación clara y concreta: frases simples, directas, evitando el doble sentido, el sarcasmo o las metáforas sin explicación.",
+      "• Respetar las necesidades sensoriales: permitir pausas, auriculares, o un espacio tranquilo cuando el entorno resulta abrumador.",
+      "• Validar las emociones: nombrar lo que la persona podría estar sintiendo sin minimizarlo ni corregirlo.",
+      "• Apoyarse en los intereses: usar los temas que le generan entusiasmo como puente para aprender o conectar con otros.",
+      "• Rutinas predecibles: una estructura clara del día reduce la ansiedad y da seguridad (podés usar la pestaña Rutinas para esto).",
+      "• Escuchar a la persona autista: sus propias preferencias y límites son la mejor guía, más que cualquier suposición externa.",
+    ],
+  },
+  {
+    id: "recursos",
+    title: "Recursos y organizaciones de apoyo",
+    icon: "🤝",
+    content: [],
+    links: [
+      { name: "APAdeA — Asociación Argentina de Padres de Autistas", url: "https://apadea.org.ar/", desc: "Orientación a familias, talleres, apoyo legal y programas de empleabilidad." },
+      { name: "PANAACEA", url: "https://www.panaacea.org/", desc: "Concientización, capacitación, intervención e investigación sobre TEA." },
+      { name: "Autismored", url: "https://autismored.org/", desc: "Plataforma gratuita que conecta familias con profesionales y recursos por geolocalización." },
+      { name: "RedEA", url: "https://redea.org.ar/", desc: "Red de organizaciones de autismo que trabajan por la inclusión y los derechos." },
+    ],
+  },
+];
+
+function InformacionTab() {
+  const [openId, setOpenId] = useState(INFO_SECTIONS[0].id);
+
+  return (
+    <div className="space-y-4">
+      <div style={{ background: "#EEF3EF", borderColor: COLORS.primary }} className="border rounded-2xl p-4">
+        <p className="text-sm" style={{ color: COLORS.text }}>
+          Esta información es general y educativa. No reemplaza una evaluación profesional. Si sospechás que alguien podría estar en el espectro autista, consultá con un profesional de la salud especializado en neurodesarrollo.
+        </p>
+      </div>
+
+      {INFO_SECTIONS.map((section) => {
+        const open = openId === section.id;
+        return (
+          <section key={section.id} style={{ background: COLORS.surface, borderColor: COLORS.border }} className="border rounded-2xl overflow-hidden">
+            <button
+              onClick={() => setOpenId(open ? null : section.id)}
+              className="w-full flex items-center gap-3 p-4 text-left"
+            >
+              <span className="text-2xl">{section.icon}</span>
+              <span className="flex-1 font-semibold">{section.title}</span>
+              <ChevronDown size={18} style={{ color: COLORS.textMuted, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
+            </button>
+            {open && (
+              <div className="px-4 pb-4 space-y-3">
+                {section.content.map((p, i) => (
+                  <p key={i} className="text-sm leading-relaxed" style={{ color: COLORS.text }}>{p}</p>
+                ))}
+                {section.links && (
+                  <div className="space-y-2">
+                    {section.links.map((link) => (
+                      <a
+                        key={link.url}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ background: COLORS.bg, borderColor: COLORS.border }}
+                        className="border rounded-xl p-3 flex items-start gap-2"
+                      >
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold flex items-center gap-1" style={{ color: COLORS.primaryDark }}>
+                            {link.name} <ExternalLink size={13} />
+                          </p>
+                          <p className="text-xs mt-0.5" style={{ color: COLORS.textMuted }}>{link.desc}</p>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        );
+      })}
     </div>
   );
 }
