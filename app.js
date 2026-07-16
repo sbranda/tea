@@ -626,7 +626,14 @@ function PictoVisual({
     return /*#__PURE__*/React.createElement("img", {
       src: src,
       alt: word,
+      draggable: false,
       onError: () => setFailed(true),
+      style: {
+        WebkitTouchCallout: "none",
+        WebkitUserSelect: "none",
+        userSelect: "none",
+        pointerEvents: "none"
+      },
       className: `${sizeClass} object-contain`
     });
   }
@@ -1208,6 +1215,13 @@ function ComunicacionTab({
       }, p.image ? /*#__PURE__*/React.createElement("img", {
         src: p.image,
         alt: p.label,
+        draggable: false,
+        style: {
+          WebkitTouchCallout: "none",
+          WebkitUserSelect: "none",
+          userSelect: "none",
+          pointerEvents: "none"
+        },
         className: `${size.icon} object-cover rounded-xl`
       }) : /*#__PURE__*/React.createElement(PictoVisual, {
         word: p.label,

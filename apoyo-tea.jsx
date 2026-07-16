@@ -236,7 +236,16 @@ function PictoVisual({ word, emoji, useIllustrations, sizeClass }) {
   }, [word, useIllustrations]);
 
   if (useIllustrations && src && !failed) {
-    return <img src={src} alt={word} onError={() => setFailed(true)} className={`${sizeClass} object-contain`} />;
+    return (
+      <img
+        src={src}
+        alt={word}
+        draggable={false}
+        onError={() => setFailed(true)}
+        style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none", pointerEvents: "none" }}
+        className={`${sizeClass} object-contain`}
+      />
+    );
   }
   return <span className="text-3xl">{emoji}</span>;
 }
@@ -721,7 +730,13 @@ function ComunicacionTab({ data, onSave }) {
                       className={`w-full border rounded-2xl ${size.tile} flex flex-col items-center gap-1 active:scale-95 transition-transform`}
                     >
                       {p.image ? (
-                        <img src={p.image} alt={p.label} className={`${size.icon} object-cover rounded-xl`} />
+                        <img
+                          src={p.image}
+                          alt={p.label}
+                          draggable={false}
+                          style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none", pointerEvents: "none" }}
+                          className={`${size.icon} object-cover rounded-xl`}
+                        />
                       ) : (
                         <PictoVisual word={p.label} emoji={p.emoji} useIllustrations={data.useIllustrations !== false} sizeClass={size.icon} />
                       )}
