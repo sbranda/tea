@@ -557,13 +557,21 @@ function resizeImageFile(file, maxSize = 200, quality = 0.72) {
 function uid() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 }
-function speak(text) {
+function speak(text, {
+  onStart,
+  onEnd
+} = {}) {
   try {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = "es-ES";
     u.rate = 0.9;
+    if (onStart) u.onstart = onStart;
+    if (onEnd) {
+      u.onend = onEnd;
+      u.onerror = onEnd;
+    }
     window.speechSynthesis.speak(u);
   } catch (e) {/* silencioso */}
 }
@@ -1139,16 +1147,28 @@ function ComunicacionTab({
   const categories = LEVEL_CATEGORIES[level];
   const [addingCustom, setAddingCustom] = useState(false);
   const size = BUTTON_SIZES[data.buttonSize || "md"];
+  const [speaking, setSpeaking] = useState(false);
+  const [justTapped, setJustTapped] = useState(null);
   const handleTap = picto => {
     if (level === 1) {
-      speak(picto.label);
+      setJustTapped(picto.label);
+      speak(picto.label, {
+        onStart: () => setSpeaking(true),
+        onEnd: () => {
+          setSpeaking(false);
+          setJustTapped(null);
+        }
+      });
       return;
     }
     setPhrase(prev => [...prev, picto]);
   };
   const speakPhrase = () => {
     if (phrase.length === 0) return;
-    speak(phrase.map(p => p.label).join(" "));
+    speak(phrase.map(p => p.label).join(" "), {
+      onStart: () => setSpeaking(true),
+      onEnd: () => setSpeaking(false)
+    });
   };
   return /*#__PURE__*/React.createElement("div", {
     className: "space-y-4"
@@ -1176,13 +1196,14 @@ function ComunicacionTab({
   }, /*#__PURE__*/React.createElement("button", {
     onClick: speakPhrase,
     style: {
-      background: COLORS.primary,
+      background: speaking ? COLORS.primaryDark : COLORS.primary,
       color: "#fff"
     },
-    className: "flex-1 rounded-xl py-2 font-medium flex items-center justify-center gap-2"
+    className: "flex-1 rounded-xl py-2 font-medium flex items-center justify-center gap-2 active:scale-95 transition-transform"
   }, /*#__PURE__*/React.createElement(Volume2, {
-    size: 18
-  }), " Hablar"), /*#__PURE__*/React.createElement("button", {
+    size: 18,
+    className: speaking ? "animate-pulse" : ""
+  }), " ", speaking ? "Hablando…" : "Hablar"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setPhrase([]),
     style: {
       borderColor: COLORS.border
@@ -1208,8 +1229,9 @@ function ComunicacionTab({
       }, /*#__PURE__*/React.createElement("button", {
         onClick: () => handleTap(p),
         style: {
-          background: COLORS.surface,
-          borderColor: COLORS.border
+          background: justTapped === p.label ? COLORS.bg : COLORS.surface,
+          borderColor: justTapped === p.label ? COLORS.primary : COLORS.border,
+          borderWidth: justTapped === p.label ? 2 : 1
         },
         className: `w-full border rounded-2xl ${size.tile} flex flex-col items-center gap-1 active:scale-95 transition-transform`
       }, p.image ? /*#__PURE__*/React.createElement("img", {

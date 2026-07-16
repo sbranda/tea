@@ -177,13 +177,15 @@ function uid() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 }
 
-function speak(text) {
+function speak(text, { onStart, onEnd } = {}) {
   try {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = "es-ES";
     u.rate = 0.9;
+    if (onStart) u.onstart = onStart;
+    if (onEnd) { u.onend = onEnd; u.onerror = onEnd; }
     window.speechSynthesis.speak(u);
   } catch (e) { /* silencioso */ }
 }
@@ -665,10 +667,16 @@ function ComunicacionTab({ data, onSave }) {
   const categories = LEVEL_CATEGORIES[level];
   const [addingCustom, setAddingCustom] = useState(false);
   const size = BUTTON_SIZES[data.buttonSize || "md"];
+  const [speaking, setSpeaking] = useState(false);
+  const [justTapped, setJustTapped] = useState(null);
 
   const handleTap = (picto) => {
     if (level === 1) {
-      speak(picto.label);
+      setJustTapped(picto.label);
+      speak(picto.label, {
+        onStart: () => setSpeaking(true),
+        onEnd: () => { setSpeaking(false); setJustTapped(null); },
+      });
       return;
     }
     setPhrase((prev) => [...prev, picto]);
@@ -676,7 +684,10 @@ function ComunicacionTab({ data, onSave }) {
 
   const speakPhrase = () => {
     if (phrase.length === 0) return;
-    speak(phrase.map((p) => p.label).join(" "));
+    speak(phrase.map((p) => p.label).join(" "), {
+      onStart: () => setSpeaking(true),
+      onEnd: () => setSpeaking(false),
+    });
   };
 
   return (
@@ -697,10 +708,10 @@ function ComunicacionTab({ data, onSave }) {
           <div className="flex gap-2">
             <button
               onClick={speakPhrase}
-              style={{ background: COLORS.primary, color: "#fff" }}
-              className="flex-1 rounded-xl py-2 font-medium flex items-center justify-center gap-2"
+              style={{ background: speaking ? COLORS.primaryDark : COLORS.primary, color: "#fff" }}
+              className="flex-1 rounded-xl py-2 font-medium flex items-center justify-center gap-2 active:scale-95 transition-transform"
             >
-              <Volume2 size={18} /> Hablar
+              <Volume2 size={18} className={speaking ? "animate-pulse" : ""} /> {speaking ? "Hablando…" : "Hablar"}
             </button>
             <button
               onClick={() => setPhrase([])}
@@ -726,7 +737,11 @@ function ComunicacionTab({ data, onSave }) {
                   <div key={cat + i} className="relative">
                     <button
                       onClick={() => handleTap(p)}
-                      style={{ background: COLORS.surface, borderColor: COLORS.border }}
+                      style={{
+                        background: justTapped === p.label ? COLORS.bg : COLORS.surface,
+                        borderColor: justTapped === p.label ? COLORS.primary : COLORS.border,
+                        borderWidth: justTapped === p.label ? 2 : 1,
+                      }}
                       className={`w-full border rounded-2xl ${size.tile} flex flex-col items-center gap-1 active:scale-95 transition-transform`}
                     >
                       {p.image ? (
