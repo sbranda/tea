@@ -394,6 +394,29 @@ const SENSORY_STRATEGIES = [{
   text: "Abrazo de presión profunda",
   emoji: "🤗"
 }];
+function resizeImageFile(file, maxSize = 200, quality = 0.72) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("No se pudo leer el archivo"));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("No se pudo procesar la imagen"));
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = maxSize;
+        canvas.height = maxSize;
+        const ctx = canvas.getContext("2d");
+        const scale = Math.max(maxSize / img.width, maxSize / img.height);
+        const w = img.width * scale;
+        const h = img.height * scale;
+        ctx.drawImage(img, (maxSize - w) / 2, (maxSize - h) / 2, w, h);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
 function uid() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 }
@@ -906,19 +929,45 @@ function ComunicacionTab({
       }
     }, cat), /*#__PURE__*/React.createElement("div", {
       className: "grid grid-cols-3 sm:grid-cols-4 gap-2"
-    }, [...items, ...custom].map((p, i) => /*#__PURE__*/React.createElement("button", {
-      key: cat + i,
-      onClick: () => handleTap(p),
-      style: {
-        background: COLORS.surface,
-        borderColor: COLORS.border
-      },
-      className: "border rounded-2xl py-4 flex flex-col items-center gap-1 active:scale-95 transition-transform"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "text-3xl"
-    }, p.emoji), /*#__PURE__*/React.createElement("span", {
-      className: "text-xs font-medium text-center leading-tight"
-    }, p.label)))));
+    }, [...items, ...custom].map((p, i) => {
+      const isCustom = !!p.id;
+      return /*#__PURE__*/React.createElement("div", {
+        key: cat + i,
+        className: "relative"
+      }, /*#__PURE__*/React.createElement("button", {
+        onClick: () => handleTap(p),
+        style: {
+          background: COLORS.surface,
+          borderColor: COLORS.border
+        },
+        className: "w-full border rounded-2xl py-4 flex flex-col items-center gap-1 active:scale-95 transition-transform"
+      }, p.image ? /*#__PURE__*/React.createElement("img", {
+        src: p.image,
+        alt: p.label,
+        className: "w-11 h-11 object-cover rounded-xl"
+      }) : /*#__PURE__*/React.createElement("span", {
+        className: "text-3xl"
+      }, p.emoji), /*#__PURE__*/React.createElement("span", {
+        className: "text-xs font-medium text-center leading-tight"
+      }, p.label)), isCustom && /*#__PURE__*/React.createElement("button", {
+        onClick: e => {
+          e.stopPropagation();
+          onSave({
+            ...data,
+            customPictos: data.customPictos.filter(c => c.id !== p.id)
+          });
+        },
+        "aria-label": "Eliminar pictograma",
+        style: {
+          background: COLORS.surface,
+          borderColor: COLORS.border,
+          color: COLORS.danger
+        },
+        className: "absolute -top-2 -right-2 w-6 h-6 rounded-full border flex items-center justify-center"
+      }, /*#__PURE__*/React.createElement(X, {
+        size: 12
+      })));
+    })));
   }), level === 3 && /*#__PURE__*/React.createElement("button", {
     onClick: () => setAddingCustom(true),
     style: {
@@ -951,6 +1000,19 @@ function AddCustomPictoModal({
   const [label, setLabel] = useState("");
   const [emoji, setEmoji] = useState("⭐");
   const [category, setCategory] = useState(categories[0]);
+  const [photo, setPhoto] = useState(null);
+  const [error, setError] = useState("");
+  const handleFile = async e => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    try {
+      setError("");
+      const dataUrl = await resizeImageFile(file);
+      setPhoto(dataUrl);
+    } catch (err) {
+      setError("No se pudo cargar la foto. Probá con otra imagen.");
+    }
+  };
   return /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-0 z-20 flex items-end sm:items-center justify-center",
     style: {
@@ -960,7 +1022,7 @@ function AddCustomPictoModal({
     style: {
       background: COLORS.surface
     },
-    className: "w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl p-6"
+    className: "w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl p-6 max-h-[85vh] overflow-y-auto"
   }, /*#__PURE__*/React.createElement("h3", {
     className: "font-semibold mb-4"
   }, "Nuevo pictograma"), /*#__PURE__*/React.createElement("label", {
@@ -973,6 +1035,51 @@ function AddCustomPictoModal({
     },
     className: "w-full border rounded-xl px-3 py-2 mb-3"
   }), /*#__PURE__*/React.createElement("label", {
+    className: "block text-sm font-medium mb-2"
+  }, "Foto (opcional)"), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3 mb-1"
+  }, photo ? /*#__PURE__*/React.createElement("img", {
+    src: photo,
+    alt: "Vista previa",
+    style: {
+      borderColor: COLORS.border
+    },
+    className: "w-16 h-16 object-cover rounded-xl border"
+  }) : /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: COLORS.bg,
+      borderColor: COLORS.border
+    },
+    className: "w-16 h-16 rounded-xl border flex items-center justify-center text-2xl"
+  }, emoji), /*#__PURE__*/React.createElement("div", {
+    className: "flex-1"
+  }, /*#__PURE__*/React.createElement("label", {
+    style: {
+      borderColor: COLORS.border
+    },
+    className: "border rounded-xl px-3 py-2 text-sm font-medium inline-block cursor-pointer"
+  }, photo ? "Cambiar foto" : "Subir foto", /*#__PURE__*/React.createElement("input", {
+    type: "file",
+    accept: "image/*",
+    onChange: handleFile,
+    className: "hidden"
+  })), photo && /*#__PURE__*/React.createElement("button", {
+    onClick: () => setPhoto(null),
+    className: "block text-xs mt-1",
+    style: {
+      color: COLORS.textMuted
+    }
+  }, "Quitar foto y usar emoji"))), error && /*#__PURE__*/React.createElement("p", {
+    className: "text-xs mb-2",
+    style: {
+      color: COLORS.danger
+    }
+  }, error), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs mb-3",
+    style: {
+      color: COLORS.textMuted
+    }
+  }, "Ej. una foto de mamá, o de su comida favorita. Si subís una foto, se usa en vez del emoji."), !photo && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("label", {
     className: "block text-sm font-medium mb-1"
   }, "Emoji"), /*#__PURE__*/React.createElement("input", {
     value: emoji,
@@ -981,7 +1088,7 @@ function AddCustomPictoModal({
       borderColor: COLORS.border
     },
     className: "w-full border rounded-xl px-3 py-2 mb-3"
-  }), /*#__PURE__*/React.createElement("label", {
+  })), /*#__PURE__*/React.createElement("label", {
     className: "block text-sm font-medium mb-1"
   }, "Categoría"), /*#__PURE__*/React.createElement("select", {
     value: category,
@@ -1006,7 +1113,8 @@ function AddCustomPictoModal({
     onClick: () => onAdd({
       label: label.trim(),
       emoji,
-      category
+      category,
+      image: photo
     }),
     style: {
       background: !label.trim() ? COLORS.border : COLORS.primary,
