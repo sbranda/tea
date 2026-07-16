@@ -99,11 +99,11 @@ const LEVEL_CATEGORIES = {
 const ROUTINE_TEMPLATES = {
   "Vacía": [],
   "Rutina laboral": [
-    { text: "Prepararse para el trabajo", emoji: "👔" },
-    { text: "Viaje al trabajo", emoji: "🚌" },
-    { text: "Trabajar", emoji: "💼" },
-    { text: "Almuerzo", emoji: "🍽️" },
-    { text: "Viaje a casa", emoji: "🚌" },
+    { text: "Prepararse para el trabajo", emoji: "👔", time: "07:00" },
+    { text: "Viaje al trabajo", emoji: "🚌", time: "07:30" },
+    { text: "Trabajar", emoji: "💼", time: "08:30" },
+    { text: "Almuerzo", emoji: "🍽️", time: "12:30" },
+    { text: "Viaje a casa", emoji: "🚌", time: "17:00" },
   ],
   "Vida independiente": [
     { text: "Tomar medicación", emoji: "💊" },
@@ -116,18 +116,18 @@ const ROUTINE_TEMPLATES = {
 
 const DEFAULT_ROUTINES = {
   "Mañana": [
-    { text: "Despertar", emoji: "⏰" }, { text: "Vestirse", emoji: "👕" },
-    { text: "Desayunar", emoji: "🍳" }, { text: "Cepillarse los dientes", emoji: "🪥" },
-    { text: "Preparar mochila", emoji: "🎒" },
+    { text: "Despertar", emoji: "⏰", time: "07:00" }, { text: "Vestirse", emoji: "👕", time: "07:10" },
+    { text: "Desayunar", emoji: "🍳", time: "07:20" }, { text: "Cepillarse los dientes", emoji: "🪥", time: "07:40" },
+    { text: "Preparar mochila", emoji: "🎒", time: "07:50" },
   ],
   "Tarde": [
-    { text: "Comer", emoji: "🍽️" }, { text: "Tarea", emoji: "📚" },
-    { text: "Jugar", emoji: "🧸" }, { text: "Merienda", emoji: "🍎" },
+    { text: "Comer", emoji: "🍽️", time: "12:30" }, { text: "Tarea", emoji: "📚", time: "14:00" },
+    { text: "Jugar", emoji: "🧸", time: "16:00" }, { text: "Merienda", emoji: "🍎", time: "17:00" },
   ],
   "Noche": [
-    { text: "Cenar", emoji: "🍽️" }, { text: "Baño", emoji: "🛁" },
-    { text: "Ponerse pijama", emoji: "👖" }, { text: "Cuento", emoji: "📖" },
-    { text: "Dormir", emoji: "😴" },
+    { text: "Cenar", emoji: "🍽️", time: "20:00" }, { text: "Baño", emoji: "🛁", time: "20:30" },
+    { text: "Ponerse pijama", emoji: "👖", time: "20:45" }, { text: "Cuento", emoji: "📖", time: "21:00" },
+    { text: "Dormir", emoji: "😴", time: "21:15" },
   ],
 };
 
@@ -957,10 +957,12 @@ function RutinasTab({ data, onSave }) {
   const [adding, setAdding] = useState(false);
   const [newText, setNewText] = useState("");
   const [newEmoji, setNewEmoji] = useState("⭐");
+  const [newTime, setNewTime] = useState("");
   const [addingRoutine, setAddingRoutine] = useState(false);
 
   const steps = data.routines[active] || [];
   const doneMap = data.routineDone[active] || {};
+  const nextIndex = steps.findIndex((_, idx) => !doneMap[idx]);
 
   const toggleDone = (idx) => {
     const nextDone = { ...doneMap, [idx]: !doneMap[idx] };
@@ -986,8 +988,10 @@ function RutinasTab({ data, onSave }) {
 
   const addStep = () => {
     if (!newText.trim()) return;
-    onSave({ ...data, routines: { ...data.routines, [active]: [...steps, { text: newText.trim(), emoji: newEmoji }] } });
-    setNewText(""); setNewEmoji("⭐"); setAdding(false);
+    const step = { text: newText.trim(), emoji: newEmoji };
+    if (newTime) step.time = newTime;
+    onSave({ ...data, routines: { ...data.routines, [active]: [...steps, step] } });
+    setNewText(""); setNewEmoji("⭐"); setNewTime(""); setAdding(false);
   };
 
   const doneCount = Object.values(doneMap).filter(Boolean).length;
@@ -1059,8 +1063,17 @@ function RutinasTab({ data, onSave }) {
       <ol className="space-y-2">
         {steps.map((s, idx) => {
           const done = !!doneMap[idx];
+          const isNext = idx === nextIndex;
           return (
-            <li key={idx} style={{ background: COLORS.surface, borderColor: COLORS.border }} className="border rounded-2xl p-3 flex items-center gap-3">
+            <li
+              key={idx}
+              style={{
+                background: isNext ? "#FFF6E9" : COLORS.surface,
+                borderColor: isNext ? COLORS.warm : COLORS.border,
+                borderWidth: isNext ? 2 : 1,
+              }}
+              className="border rounded-2xl p-3 flex items-center gap-3"
+            >
               <button
                 onClick={() => toggleDone(idx)}
                 style={{ background: done ? COLORS.primary : COLORS.bg, borderColor: COLORS.border }}
@@ -1069,9 +1082,23 @@ function RutinasTab({ data, onSave }) {
               >
                 {done ? <Check size={18} color="#fff" /> : <PictoVisual word={s.text} emoji={s.emoji} useIllustrations={data.useIllustrations !== false} sizeClass={BUTTON_SIZES[data.buttonSize || "md"].circleIcon} />}
               </button>
-              <span className={`flex-1 font-medium ${done ? "line-through" : ""}`} style={{ color: done ? COLORS.textMuted : COLORS.text }}>
-                {s.text}
-              </span>
+              <div className="flex-1 min-w-0">
+                {isNext && (
+                  <span style={{ background: COLORS.warm, color: "#fff" }} className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mb-0.5">
+                    SIGUIENTE
+                  </span>
+                )}
+                <div className="flex items-center gap-2">
+                  <span className={`font-medium truncate ${done ? "line-through" : ""}`} style={{ color: done ? COLORS.textMuted : COLORS.text }}>
+                    {s.text}
+                  </span>
+                  {s.time && (
+                    <span className="text-xs font-medium shrink-0" style={{ color: isNext ? COLORS.warm : COLORS.textMuted }}>
+                      🕐 {s.time}
+                    </span>
+                  )}
+                </div>
+              </div>
               <button onClick={() => moveStep(idx, -1)} aria-label="Subir" style={{ color: COLORS.textMuted }}><ChevronLeft className="rotate-90" size={18} /></button>
               <button onClick={() => moveStep(idx, 1)} aria-label="Bajar" style={{ color: COLORS.textMuted }}><ChevronRight className="rotate-90" size={18} /></button>
               <button onClick={() => removeStep(idx)} aria-label="Eliminar paso" style={{ color: COLORS.danger }}><Trash2 size={16} /></button>
@@ -1089,6 +1116,10 @@ function RutinasTab({ data, onSave }) {
           <div className="flex gap-2">
             <input value={newEmoji} onChange={(e) => setNewEmoji(e.target.value)} style={{ borderColor: COLORS.border }} className="w-16 border rounded-xl px-2 py-2 text-center" />
             <input value={newText} onChange={(e) => setNewText(e.target.value)} placeholder="Nombre del paso" style={{ borderColor: COLORS.border }} className="flex-1 border rounded-xl px-3 py-2" />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium shrink-0" style={{ color: COLORS.textMuted }}>Hora estimada (opcional)</label>
+            <input type="time" value={newTime} onChange={(e) => setNewTime(e.target.value)} style={{ borderColor: COLORS.border }} className="border rounded-xl px-3 py-2 text-sm" />
           </div>
           <div className="flex gap-2">
             <button onClick={() => setAdding(false)} style={{ borderColor: COLORS.border }} className="flex-1 border rounded-xl py-2 text-sm font-medium">Cancelar</button>

@@ -423,19 +423,24 @@ const ROUTINE_TEMPLATES = {
   "Vacía": [],
   "Rutina laboral": [{
     text: "Prepararse para el trabajo",
-    emoji: "👔"
+    emoji: "👔",
+    time: "07:00"
   }, {
     text: "Viaje al trabajo",
-    emoji: "🚌"
+    emoji: "🚌",
+    time: "07:30"
   }, {
     text: "Trabajar",
-    emoji: "💼"
+    emoji: "💼",
+    time: "08:30"
   }, {
     text: "Almuerzo",
-    emoji: "🍽️"
+    emoji: "🍽️",
+    time: "12:30"
   }, {
     text: "Viaje a casa",
-    emoji: "🚌"
+    emoji: "🚌",
+    time: "17:00"
   }],
   "Vida independiente": [{
     text: "Tomar medicación",
@@ -457,48 +462,62 @@ const ROUTINE_TEMPLATES = {
 const DEFAULT_ROUTINES = {
   "Mañana": [{
     text: "Despertar",
-    emoji: "⏰"
+    emoji: "⏰",
+    time: "07:00"
   }, {
     text: "Vestirse",
-    emoji: "👕"
+    emoji: "👕",
+    time: "07:10"
   }, {
     text: "Desayunar",
-    emoji: "🍳"
+    emoji: "🍳",
+    time: "07:20"
   }, {
     text: "Cepillarse los dientes",
-    emoji: "🪥"
+    emoji: "🪥",
+    time: "07:40"
   }, {
     text: "Preparar mochila",
-    emoji: "🎒"
+    emoji: "🎒",
+    time: "07:50"
   }],
   "Tarde": [{
     text: "Comer",
-    emoji: "🍽️"
+    emoji: "🍽️",
+    time: "12:30"
   }, {
     text: "Tarea",
-    emoji: "📚"
+    emoji: "📚",
+    time: "14:00"
   }, {
     text: "Jugar",
-    emoji: "🧸"
+    emoji: "🧸",
+    time: "16:00"
   }, {
     text: "Merienda",
-    emoji: "🍎"
+    emoji: "🍎",
+    time: "17:00"
   }],
   "Noche": [{
     text: "Cenar",
-    emoji: "🍽️"
+    emoji: "🍽️",
+    time: "20:00"
   }, {
     text: "Baño",
-    emoji: "🛁"
+    emoji: "🛁",
+    time: "20:30"
   }, {
     text: "Ponerse pijama",
-    emoji: "👖"
+    emoji: "👖",
+    time: "20:45"
   }, {
     text: "Cuento",
-    emoji: "📖"
+    emoji: "📖",
+    time: "21:00"
   }, {
     text: "Dormir",
-    emoji: "😴"
+    emoji: "😴",
+    time: "21:15"
   }]
 };
 const CHECKIN_EMOTIONS = [{
@@ -1543,9 +1562,11 @@ function RutinasTab({
   const [adding, setAdding] = useState(false);
   const [newText, setNewText] = useState("");
   const [newEmoji, setNewEmoji] = useState("⭐");
+  const [newTime, setNewTime] = useState("");
   const [addingRoutine, setAddingRoutine] = useState(false);
   const steps = data.routines[active] || [];
   const doneMap = data.routineDone[active] || {};
+  const nextIndex = steps.findIndex((_, idx) => !doneMap[idx]);
   const toggleDone = idx => {
     const nextDone = {
       ...doneMap,
@@ -1593,18 +1614,21 @@ function RutinasTab({
   };
   const addStep = () => {
     if (!newText.trim()) return;
+    const step = {
+      text: newText.trim(),
+      emoji: newEmoji
+    };
+    if (newTime) step.time = newTime;
     onSave({
       ...data,
       routines: {
         ...data.routines,
-        [active]: [...steps, {
-          text: newText.trim(),
-          emoji: newEmoji
-        }]
+        [active]: [...steps, step]
       }
     });
     setNewText("");
     setNewEmoji("⭐");
+    setNewTime("");
     setAdding(false);
   };
   const doneCount = Object.values(doneMap).filter(Boolean).length;
@@ -1698,11 +1722,13 @@ function RutinasTab({
     className: "space-y-2"
   }, steps.map((s, idx) => {
     const done = !!doneMap[idx];
+    const isNext = idx === nextIndex;
     return /*#__PURE__*/React.createElement("li", {
       key: idx,
       style: {
-        background: COLORS.surface,
-        borderColor: COLORS.border
+        background: isNext ? "#FFF6E9" : COLORS.surface,
+        borderColor: isNext ? COLORS.warm : COLORS.border,
+        borderWidth: isNext ? 2 : 1
       },
       className: "border rounded-2xl p-3 flex items-center gap-3"
     }, /*#__PURE__*/React.createElement("button", {
@@ -1721,12 +1747,27 @@ function RutinasTab({
       emoji: s.emoji,
       useIllustrations: data.useIllustrations !== false,
       sizeClass: BUTTON_SIZES[data.buttonSize || "md"].circleIcon
-    })), /*#__PURE__*/React.createElement("span", {
-      className: `flex-1 font-medium ${done ? "line-through" : ""}`,
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "flex-1 min-w-0"
+    }, isNext && /*#__PURE__*/React.createElement("span", {
+      style: {
+        background: COLORS.warm,
+        color: "#fff"
+      },
+      className: "inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mb-0.5"
+    }, "SIGUIENTE"), /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: `font-medium truncate ${done ? "line-through" : ""}`,
       style: {
         color: done ? COLORS.textMuted : COLORS.text
       }
-    }, s.text), /*#__PURE__*/React.createElement("button", {
+    }, s.text), s.time && /*#__PURE__*/React.createElement("span", {
+      className: "text-xs font-medium shrink-0",
+      style: {
+        color: isNext ? COLORS.warm : COLORS.textMuted
+      }
+    }, "🕐 ", s.time))), /*#__PURE__*/React.createElement("button", {
       onClick: () => moveStep(idx, -1),
       "aria-label": "Subir",
       style: {
@@ -1783,6 +1824,21 @@ function RutinasTab({
       borderColor: COLORS.border
     },
     className: "flex-1 border rounded-xl px-3 py-2"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "text-xs font-medium shrink-0",
+    style: {
+      color: COLORS.textMuted
+    }
+  }, "Hora estimada (opcional)"), /*#__PURE__*/React.createElement("input", {
+    type: "time",
+    value: newTime,
+    onChange: e => setNewTime(e.target.value),
+    style: {
+      borderColor: COLORS.border
+    },
+    className: "border rounded-xl px-3 py-2 text-sm"
   })), /*#__PURE__*/React.createElement("div", {
     className: "flex gap-2"
   }, /*#__PURE__*/React.createElement("button", {
