@@ -5,29 +5,43 @@ import {
   User, Sparkles, Pencil
 } from "lucide-react";
 
-/* ---------- Paleta y tokens ----------
-   Fondo:      #F5F7F3  (blanco cálido con un toque verde, baja saturación)
-   Superficie: #FFFFFF
-   Primario:   #5E8B6E  (salvia — calma, natural)
-   Primario oscuro: #446A52
-   Secundario: #6E82AC  (azul pizarra suave)
-   Acento cálido (uso mínimo): #E0A458
-   Texto:      #2E332F
-   Texto tenue:#6E766F
-   Suave/borde:#E4E8E1
+/* ---------- Temas de color ----------
+   "Calma": paleta original, baja saturación, pensada para sensibilidad sensorial
+   "Vibrante": colores más saturados y alegres, para quien busca más estímulo visual
+   "Pastel": tonos suaves tipo arcoíris pastel, cálido y colorido sin ser intenso
 ------------------------------------- */
-const COLORS = {
-  bg: "#F5F7F3",
-  surface: "#FFFFFF",
-  primary: "#5E8B6E",
-  primaryDark: "#446A52",
-  secondary: "#6E82AC",
-  warm: "#E0A458",
-  text: "#2E332F",
-  textMuted: "#6E766F",
-  border: "#E4E8E1",
-  danger: "#C97B6E",
+const THEMES = {
+  calma: {
+    bg: "#F5F7F3", surface: "#FFFFFF", primary: "#5E8B6E", primaryDark: "#446A52",
+    secondary: "#6E82AC", warm: "#E0A458", text: "#2E332F", textMuted: "#6E766F",
+    border: "#E4E8E1", danger: "#C97B6E",
+  },
+  vibrante: {
+    bg: "#FFF8F0", surface: "#FFFFFF", primary: "#FF7A59", primaryDark: "#E85D3D",
+    secondary: "#3FA7D6", warm: "#FFC93C", text: "#2E332F", textMuted: "#6E766F",
+    border: "#FFE1D0", danger: "#E0525C",
+  },
+  pastel: {
+    bg: "#FDF6FB", surface: "#FFFFFF", primary: "#E88AB5", primaryDark: "#C96A97",
+    secondary: "#7FC4AC", warm: "#FFD37A", text: "#2E332F", textMuted: "#6E766F",
+    border: "#F3E1EE", danger: "#E8918C",
+  },
 };
+
+const THEME_LABELS = { calma: "Calma", vibrante: "Vibrante", pastel: "Pastel" };
+
+const COLORS = { ...THEMES.calma };
+
+function applyTheme(name) {
+  Object.assign(COLORS, THEMES[name] || THEMES.calma);
+}
+
+const BUTTON_SIZES = {
+  md: { tile: "py-4", icon: "w-11 h-11", label: "text-xs", grid: "grid-cols-3 sm:grid-cols-4", circle: "w-10 h-10", circleIcon: "w-6 h-6" },
+  lg: { tile: "py-6", icon: "w-16 h-16", label: "text-sm", grid: "grid-cols-2 sm:grid-cols-3", circle: "w-14 h-14", circleIcon: "w-8 h-8" },
+  xl: { tile: "py-8", icon: "w-24 h-24", label: "text-base", grid: "grid-cols-2", circle: "w-16 h-16", circleIcon: "w-10 h-10" },
+};
+const BUTTON_SIZE_LABELS = { md: "Mediano", lg: "Grande", xl: "Extra grande" };
 
 const PROFILE_COLORS = ["#5E8B6E", "#6E82AC", "#E0A458", "#C97B6E", "#8B7BA8"];
 const PROFILE_EMOJIS = ["🦊", "🐢", "🐧", "🐝", "🦋", "🐨", "🐬", "🦉"];
@@ -231,6 +245,8 @@ function defaultProfileData() {
   return {
     level: 2,
     useIllustrations: true,
+    theme: "calma",
+    buttonSize: "md",
     routines: JSON.parse(JSON.stringify(DEFAULT_ROUTINES)),
     routineDone: {},
     checkins: [],
@@ -263,6 +279,10 @@ export default function App() {
       setData(raw ? JSON.parse(raw) : defaultProfileData());
     })();
   }, [currentId]);
+
+  useEffect(() => {
+    applyTheme(data ? data.theme : "calma");
+  }, [data && data.theme]);
 
   const saveData = useCallback((next) => {
     setData(next);
@@ -541,6 +561,45 @@ function SettingsPanel({ profile, data, onSave, onClose, onDeleteProfile }) {
           Pictogramas de ARASAAC (Gobierno de Aragón), Creative Commons BY-NC-SA.
         </p>
 
+        <label className="block text-sm font-medium mb-2">Tamaño de los botones</label>
+        <div className="flex gap-2 mb-6">
+          {Object.keys(BUTTON_SIZES).map((s) => (
+            <button
+              key={s}
+              onClick={() => onSave({ ...data, buttonSize: s })}
+              style={{
+                background: (data.buttonSize || "md") === s ? COLORS.primary : COLORS.bg,
+                color: (data.buttonSize || "md") === s ? "#fff" : COLORS.text,
+              }}
+              className="flex-1 rounded-xl py-2 text-sm font-medium"
+            >
+              {BUTTON_SIZE_LABELS[s]}
+            </button>
+          ))}
+        </div>
+
+        <label className="block text-sm font-medium mb-2">Tema de color</label>
+        <div className="flex gap-3 mb-6">
+          {Object.keys(THEMES).map((t) => (
+            <button
+              key={t}
+              onClick={() => onSave({ ...data, theme: t })}
+              className="flex-1 flex flex-col items-center gap-1.5"
+              aria-label={`Tema ${THEME_LABELS[t]}`}
+            >
+              <span
+                style={{
+                  background: `linear-gradient(135deg, ${THEMES[t].primary} 50%, ${THEMES[t].secondary} 50%)`,
+                  outline: (data.theme || "calma") === t ? `3px solid ${COLORS.text}` : `2px solid ${THEMES[t].border}`,
+                  outlineOffset: 2,
+                }}
+                className="w-11 h-11 rounded-full"
+              />
+              <span className="text-xs font-medium">{THEME_LABELS[t]}</span>
+            </button>
+          ))}
+        </div>
+
         {!confirmDelete ? (
           <button onClick={() => setConfirmDelete(true)} style={{ color: COLORS.danger }} className="text-sm font-medium flex items-center gap-1.5">
             <Trash2 size={16} /> Eliminar este perfil
@@ -596,6 +655,7 @@ function ComunicacionTab({ data, onSave }) {
   const level = data.level;
   const categories = LEVEL_CATEGORIES[level];
   const [addingCustom, setAddingCustom] = useState(false);
+  const size = BUTTON_SIZES[data.buttonSize || "md"];
 
   const handleTap = (picto) => {
     if (level === 1) {
@@ -650,7 +710,7 @@ function ComunicacionTab({ data, onSave }) {
         return (
           <section key={cat}>
             <h3 className="text-sm font-semibold mb-2" style={{ color: COLORS.textMuted }}>{cat}</h3>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            <div className={`grid ${size.grid} gap-2`}>
               {[...items, ...custom].map((p, i) => {
                 const isCustom = !!p.id;
                 return (
@@ -658,14 +718,14 @@ function ComunicacionTab({ data, onSave }) {
                     <button
                       onClick={() => handleTap(p)}
                       style={{ background: COLORS.surface, borderColor: COLORS.border }}
-                      className="w-full border rounded-2xl py-4 flex flex-col items-center gap-1 active:scale-95 transition-transform"
+                      className={`w-full border rounded-2xl ${size.tile} flex flex-col items-center gap-1 active:scale-95 transition-transform`}
                     >
                       {p.image ? (
-                        <img src={p.image} alt={p.label} className="w-11 h-11 object-cover rounded-xl" />
+                        <img src={p.image} alt={p.label} className={`${size.icon} object-cover rounded-xl`} />
                       ) : (
-                        <PictoVisual word={p.label} emoji={p.emoji} useIllustrations={data.useIllustrations !== false} sizeClass="w-11 h-11" />
+                        <PictoVisual word={p.label} emoji={p.emoji} useIllustrations={data.useIllustrations !== false} sizeClass={size.icon} />
                       )}
-                      <span className="text-xs font-medium text-center leading-tight">{p.label}</span>
+                      <span className={`${size.label} font-medium text-center leading-tight`}>{p.label}</span>
                     </button>
                     {isCustom && (
                       <button
@@ -907,10 +967,10 @@ function RutinasTab({ data, onSave }) {
               <button
                 onClick={() => toggleDone(idx)}
                 style={{ background: done ? COLORS.primary : COLORS.bg, borderColor: COLORS.border }}
-                className="w-10 h-10 shrink-0 rounded-full border flex items-center justify-center"
+                className={`${BUTTON_SIZES[data.buttonSize || "md"].circle} shrink-0 rounded-full border flex items-center justify-center`}
                 aria-label={done ? "Marcar como pendiente" : "Marcar como hecho"}
               >
-                {done ? <Check size={18} color="#fff" /> : <PictoVisual word={s.text} emoji={s.emoji} useIllustrations={data.useIllustrations !== false} sizeClass="w-6 h-6" />}
+                {done ? <Check size={18} color="#fff" /> : <PictoVisual word={s.text} emoji={s.emoji} useIllustrations={data.useIllustrations !== false} sizeClass={BUTTON_SIZES[data.buttonSize || "md"].circleIcon} />}
               </button>
               <span className={`flex-1 font-medium ${done ? "line-through" : ""}`} style={{ color: done ? COLORS.textMuted : COLORS.text }}>
                 {s.text}
@@ -1040,15 +1100,15 @@ function RegulacionTab({ data, onSave }) {
     <div className="space-y-6">
       <section style={{ background: COLORS.surface, borderColor: COLORS.border }} className="border rounded-2xl p-4">
         <h3 className="text-sm font-semibold mb-3" style={{ color: COLORS.textMuted }}>¿Cómo te sientes ahora?</h3>
-        <div className="grid grid-cols-4 gap-2">
+        <div className={`grid ${BUTTON_SIZES[data.buttonSize || "md"].grid} gap-2`}>
           {CHECKIN_EMOTIONS.map((e) => (
             <button
               key={e.label}
               onClick={() => setPendingEmotion(e)}
               style={{ background: COLORS.bg }}
-              className="rounded-xl py-3 flex flex-col items-center gap-1 active:scale-95 transition-transform"
+              className={`rounded-xl ${BUTTON_SIZES[data.buttonSize || "md"].tile} flex flex-col items-center gap-1 active:scale-95 transition-transform`}
             >
-              <PictoVisual word={e.label} emoji={e.emoji} useIllustrations={data.useIllustrations !== false} sizeClass="w-9 h-9" />
+              <PictoVisual word={e.label} emoji={e.emoji} useIllustrations={data.useIllustrations !== false} sizeClass={BUTTON_SIZES[data.buttonSize || "md"].icon} />
               <span className="text-[11px] font-medium">{e.label}</span>
             </button>
           ))}
