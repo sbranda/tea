@@ -1,4 +1,4 @@
-const CACHE_NAME = 'apoyo-tea-v9';
+const CACHE_NAME = 'apoyo-tea-v10';
 const ASSETS = [
   './index.html',
   './manifest.json',

@@ -263,7 +263,25 @@ function defaultProfileData() {
     checkins: [],
     notes: [],
     customPictos: [],
+    phraseHistory: [],
   };
+}
+
+function recordPhrase(data, onSave, text) {
+  const clean = text.trim();
+  if (!clean) return;
+  const key = clean.toLowerCase();
+  const history = data.phraseHistory || [];
+  const idx = history.findIndex((h) => h.text.toLowerCase() === key);
+  let next;
+  if (idx >= 0) {
+    next = [...history];
+    next[idx] = { ...next[idx], count: next[idx].count + 1, lastUsed: Date.now() };
+  } else {
+    next = [...history, { id: uid(), text: clean, count: 1, lastUsed: Date.now() }];
+  }
+  next = next.sort((a, b) => b.count - a.count || b.lastUsed - a.lastUsed).slice(0, 30);
+  onSave({ ...data, phraseHistory: next });
 }
 
 export default function App() {
@@ -680,6 +698,7 @@ function ComunicacionTab({ data, onSave }) {
         onStart: () => setSpeaking(true),
         onEnd: () => { setSpeaking(false); setJustTapped(null); },
       });
+      recordPhrase(data, onSave, picto.label);
       return;
     }
     setPhrase((prev) => [...prev, picto]);
@@ -687,14 +706,59 @@ function ComunicacionTab({ data, onSave }) {
 
   const speakPhrase = () => {
     if (phrase.length === 0) return;
-    speak(phrase.map((p) => p.label).join(" "), {
+    const text = phrase.map((p) => p.label).join(" ");
+    speak(text, {
       onStart: () => setSpeaking(true),
       onEnd: () => setSpeaking(false),
     });
+    recordPhrase(data, onSave, text);
   };
+
+  const speakStoredPhrase = (text) => {
+    speak(text, {
+      onStart: () => setSpeaking(true),
+      onEnd: () => setSpeaking(false),
+    });
+    recordPhrase(data, onSave, text);
+  };
+
+  const removeStoredPhrase = (id) => {
+    onSave({ ...data, phraseHistory: (data.phraseHistory || []).filter((h) => h.id !== id) });
+  };
+
+  const frequentPhrases = (data.phraseHistory || []).slice(0, 8);
 
   return (
     <div className="space-y-4">
+      {frequentPhrases.length > 0 && (
+        <section>
+          <h3 className="text-sm font-semibold mb-2 flex items-center gap-1" style={{ color: COLORS.textMuted }}>
+            ⭐ Frecuentes
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {frequentPhrases.map((h) => (
+              <div key={h.id} className="relative">
+                <button
+                  onClick={() => speakStoredPhrase(h.text)}
+                  style={{ background: COLORS.bg, borderColor: COLORS.border }}
+                  className="border rounded-full pl-3 pr-3 py-2 text-sm font-medium flex items-center gap-1.5 active:scale-95 transition-transform"
+                >
+                  <Volume2 size={13} style={{ color: COLORS.primary }} /> {h.text}
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); removeStoredPhrase(h.id); }}
+                  aria-label="Quitar de frecuentes"
+                  style={{ background: COLORS.surface, borderColor: COLORS.border, color: COLORS.danger }}
+                  className="absolute -top-2 -right-2 w-5 h-5 rounded-full border flex items-center justify-center"
+                >
+                  <X size={10} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {level > 1 && (
         <div style={{ background: COLORS.surface, borderColor: COLORS.border }} className="border rounded-2xl p-3 sticky top-[68px] z-[5]">
           <div className="min-h-[40px] flex flex-wrap items-center gap-2 mb-2">
