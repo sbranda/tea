@@ -53,11 +53,20 @@ const PICTOGRAMS = {
     { label: "Casa", emoji: "🏠" }, { label: "Escuela", emoji: "🏫" },
     { label: "Parque", emoji: "🌳" }, { label: "Tienda", emoji: "🛒" },
     { label: "Médico", emoji: "🏥" }, { label: "Coche", emoji: "🚗" },
+    { label: "Trabajo", emoji: "🏢" }, { label: "Banco", emoji: "🏦" },
+    { label: "Farmacia", emoji: "⚕️" },
   ],
   "Personas": [
     { label: "Mamá", emoji: "👩" }, { label: "Papá", emoji: "👨" },
     { label: "Amigo", emoji: "🧑‍🤝‍🧑" }, { label: "Maestro", emoji: "🧑‍🏫" },
     { label: "Doctor", emoji: "👩‍⚕️" }, { label: "Familia", emoji: "👪" },
+    { label: "Jefe", emoji: "👔" }, { label: "Compañero de trabajo", emoji: "🧑‍💼" },
+  ],
+  "Vida adulta": [
+    { label: "Trabajar", emoji: "💼" }, { label: "Dinero", emoji: "💰" },
+    { label: "Medicación", emoji: "💊" }, { label: "Transporte", emoji: "🚌" },
+    { label: "Trámite", emoji: "📄" }, { label: "Cocinar", emoji: "🍳" },
+    { label: "Cita", emoji: "📅" }, { label: "Compras", emoji: "🛍️" },
   ],
   "Palabras": [
     { label: "Quiero", emoji: "👉" }, { label: "No quiero", emoji: "🚫" },
@@ -69,8 +78,26 @@ const PICTOGRAMS = {
 
 const LEVEL_CATEGORIES = {
   1: ["Necesidades básicas", "Emociones"],
-  2: ["Necesidades básicas", "Emociones", "Actividades", "Lugares"],
-  3: ["Necesidades básicas", "Emociones", "Actividades", "Lugares", "Personas", "Palabras"],
+  2: ["Necesidades básicas", "Emociones", "Actividades", "Lugares", "Vida adulta"],
+  3: ["Necesidades básicas", "Emociones", "Actividades", "Lugares", "Personas", "Vida adulta", "Palabras"],
+};
+
+const ROUTINE_TEMPLATES = {
+  "Vacía": [],
+  "Rutina laboral": [
+    { text: "Prepararse para el trabajo", emoji: "👔" },
+    { text: "Viaje al trabajo", emoji: "🚌" },
+    { text: "Trabajar", emoji: "💼" },
+    { text: "Almuerzo", emoji: "🍽️" },
+    { text: "Viaje a casa", emoji: "🚌" },
+  ],
+  "Vida independiente": [
+    { text: "Tomar medicación", emoji: "💊" },
+    { text: "Cocinar", emoji: "🍳" },
+    { text: "Limpiar", emoji: "🧹" },
+    { text: "Pagar cuentas", emoji: "💰" },
+    { text: "Hacer compras", emoji: "🛍️" },
+  ],
 };
 
 const DEFAULT_ROUTINES = {
@@ -773,6 +800,7 @@ function RutinasTab({ data, onSave }) {
   const [adding, setAdding] = useState(false);
   const [newText, setNewText] = useState("");
   const [newEmoji, setNewEmoji] = useState("⭐");
+  const [addingRoutine, setAddingRoutine] = useState(false);
 
   const steps = data.routines[active] || [];
   const doneMap = data.routineDone[active] || {};
@@ -807,20 +835,64 @@ function RutinasTab({ data, onSave }) {
 
   const doneCount = Object.values(doneMap).filter(Boolean).length;
 
+  const createRoutine = (name, steps) => {
+    onSave({
+      ...data,
+      routines: { ...data.routines, [name]: steps },
+      routineDone: { ...data.routineDone, [name]: {} },
+    });
+    setActive(name);
+    setAddingRoutine(false);
+  };
+
+  const deleteRoutine = (name) => {
+    const nextRoutines = { ...data.routines };
+    const nextDone = { ...data.routineDone };
+    delete nextRoutines[name];
+    delete nextDone[name];
+    onSave({ ...data, routines: nextRoutines, routineDone: nextDone });
+    const remaining = Object.keys(nextRoutines);
+    setActive(remaining[0]);
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
-        {routineNames.map((r) => (
-          <button
-            key={r}
-            onClick={() => setActive(r)}
-            style={{ background: active === r ? COLORS.secondary : COLORS.surface, color: active === r ? "#fff" : COLORS.text, borderColor: COLORS.border }}
-            className="border flex-1 rounded-xl py-2 text-sm font-medium"
-          >
-            {r}
-          </button>
-        ))}
+      <div className="flex gap-2 items-center">
+        <div className="flex gap-2 flex-1 overflow-x-auto">
+          {routineNames.map((r) => (
+            <button
+              key={r}
+              onClick={() => setActive(r)}
+              style={{ background: active === r ? COLORS.secondary : COLORS.surface, color: active === r ? "#fff" : COLORS.text, borderColor: COLORS.border }}
+              className="border shrink-0 rounded-xl px-4 py-2 text-sm font-medium"
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => setAddingRoutine(true)}
+          style={{ borderColor: COLORS.border, color: COLORS.textMuted }}
+          className="shrink-0 border border-dashed rounded-xl w-10 h-10 flex items-center justify-center"
+          aria-label="Añadir rutina"
+        >
+          <Plus size={16} />
+        </button>
       </div>
+
+      {addingRoutine && (
+        <AddRoutineModal
+          existingNames={routineNames}
+          onCancel={() => setAddingRoutine(false)}
+          onCreate={createRoutine}
+        />
+      )}
+
+      {!["Mañana", "Tarde", "Noche"].includes(active) && (
+        <button onClick={() => deleteRoutine(active)} className="text-xs font-medium flex items-center gap-1" style={{ color: COLORS.danger }}>
+          <Trash2 size={13} /> Eliminar rutina "{active}"
+        </button>
+      )}
 
       <div style={{ background: COLORS.surface, borderColor: COLORS.border }} className="border rounded-2xl p-3 flex items-center justify-between">
         <span className="text-sm font-medium" style={{ color: COLORS.textMuted }}>{doneCount} de {steps.length} completado{steps.length !== 1 ? "s" : ""}</span>
@@ -867,6 +939,62 @@ function RutinasTab({ data, onSave }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function AddRoutineModal({ existingNames, onCancel, onCreate }) {
+  const [name, setName] = useState("");
+  const [template, setTemplate] = useState("Vacía");
+
+  return (
+    <div className="fixed inset-0 z-20 flex items-end sm:items-center justify-center" style={{ background: "rgba(46,51,47,0.35)" }}>
+      <div style={{ background: COLORS.surface }} className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl p-6">
+        <h3 className="font-semibold mb-4">Nueva rutina</h3>
+
+        <label className="block text-sm font-medium mb-1">Nombre</label>
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder='Ej. "Trabajo", "Fin de semana"'
+          style={{ borderColor: COLORS.border }}
+          className="w-full border rounded-xl px-3 py-2 mb-4"
+        />
+
+        <label className="block text-sm font-medium mb-2">Empezar desde</label>
+        <div className="space-y-2 mb-5">
+          {Object.keys(ROUTINE_TEMPLATES).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTemplate(t)}
+              style={{
+                background: template === t ? "#EEF3EF" : COLORS.bg,
+                borderColor: template === t ? COLORS.primary : COLORS.border,
+              }}
+              className="w-full border rounded-xl px-3 py-2.5 text-left text-sm font-medium"
+            >
+              {t}
+              {t !== "Vacía" && (
+                <span className="block text-xs font-normal mt-0.5" style={{ color: COLORS.textMuted }}>
+                  {ROUTINE_TEMPLATES[t].map((s) => s.text).join(" · ")}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex gap-2">
+          <button onClick={onCancel} style={{ borderColor: COLORS.border }} className="flex-1 border rounded-xl py-2 font-medium">Cancelar</button>
+          <button
+            disabled={!name.trim() || existingNames.includes(name.trim())}
+            onClick={() => onCreate(name.trim(), ROUTINE_TEMPLATES[template])}
+            style={{ background: (!name.trim() || existingNames.includes(name.trim())) ? COLORS.border : COLORS.primary, color: "#fff" }}
+            className="flex-1 rounded-xl py-2 font-medium"
+          >
+            Crear
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
