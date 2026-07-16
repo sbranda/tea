@@ -838,7 +838,7 @@ function RutinasTab({ data, onSave }) {
                 className="w-10 h-10 shrink-0 rounded-full border flex items-center justify-center"
                 aria-label={done ? "Marcar como pendiente" : "Marcar como hecho"}
               >
-                {done ? <Check size={18} color="#fff" /> : <span className="text-lg">{s.emoji}</span>}
+                {done ? <Check size={18} color="#fff" /> : <PictoVisual word={s.text} emoji={s.emoji} useIllustrations={data.useIllustrations !== false} sizeClass="w-6 h-6" />}
               </button>
               <span className={`flex-1 font-medium ${done ? "line-through" : ""}`} style={{ color: done ? COLORS.textMuted : COLORS.text }}>
                 {s.text}
@@ -920,7 +920,7 @@ function RegulacionTab({ data, onSave }) {
               style={{ background: COLORS.bg }}
               className="rounded-xl py-3 flex flex-col items-center gap-1 active:scale-95 transition-transform"
             >
-              <span className="text-2xl">{e.emoji}</span>
+              <PictoVisual word={e.label} emoji={e.emoji} useIllustrations={data.useIllustrations !== false} sizeClass="w-9 h-9" />
               <span className="text-[11px] font-medium">{e.label}</span>
             </button>
           ))}
@@ -930,6 +930,7 @@ function RegulacionTab({ data, onSave }) {
       {pendingEmotion && (
         <IntensityModal
           emotion={pendingEmotion}
+          useIllustrations={data.useIllustrations !== false}
           onCancel={() => setPendingEmotion(null)}
           onConfirm={(intensity) => saveEmotion(pendingEmotion, intensity)}
         />
@@ -982,7 +983,7 @@ function RegulacionTab({ data, onSave }) {
               style={{ background: triedToday[i] ? "#EEF3EF" : COLORS.bg }}
               className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-left"
             >
-              <span className="text-xl">{s.emoji}</span>
+              <PictoVisual word={s.text} emoji={s.emoji} useIllustrations={data.useIllustrations !== false} sizeClass="w-7 h-7" />
               <span className="flex-1 text-sm font-medium">{s.text}</span>
               {triedToday[i] && <Check size={16} style={{ color: COLORS.primary }} />}
             </button>
@@ -993,12 +994,12 @@ function RegulacionTab({ data, onSave }) {
   );
 }
 
-function IntensityModal({ emotion, onCancel, onConfirm }) {
+function IntensityModal({ emotion, useIllustrations, onCancel, onConfirm }) {
   return (
     <div className="fixed inset-0 z-20 flex items-end sm:items-center justify-center" style={{ background: "rgba(46,51,47,0.35)" }}>
       <div style={{ background: COLORS.surface }} className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl p-6">
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-3xl">{emotion.emoji}</span>
+          <PictoVisual word={emotion.label} emoji={emotion.emoji} useIllustrations={useIllustrations} sizeClass="w-9 h-9" />
           <h3 className="font-semibold">{emotion.label}</h3>
         </div>
         <p className="text-sm mb-5" style={{ color: COLORS.textMuted }}>¿Con qué intensidad lo sientes?</p>
@@ -1140,7 +1141,7 @@ function SeguimientoTab({ data, onSave, profileName }) {
           <ul className="space-y-2 max-h-72 overflow-y-auto">
             {data.checkins.map((c) => (
               <li key={c.id} className="flex items-center gap-2 text-sm">
-                <span className="text-lg">{c.emoji}</span>
+                <PictoVisual word={c.emotion} emoji={c.emoji} useIllustrations={data.useIllustrations !== false} sizeClass="w-5 h-5" />
                 <span className="flex-1">{c.emotion}</span>
                 <IntensityDots level={c.intensity} />
                 <span style={{ color: COLORS.textMuted }} className="text-xs">{fmtDate(c.date)}</span>

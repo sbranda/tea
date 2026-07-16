@@ -1338,9 +1338,12 @@ function RutinasTab({
     }, done ? /*#__PURE__*/React.createElement(Check, {
       size: 18,
       color: "#fff"
-    }) : /*#__PURE__*/React.createElement("span", {
-      className: "text-lg"
-    }, s.emoji)), /*#__PURE__*/React.createElement("span", {
+    }) : /*#__PURE__*/React.createElement(PictoVisual, {
+      word: s.text,
+      emoji: s.emoji,
+      useIllustrations: data.useIllustrations !== false,
+      sizeClass: "w-6 h-6"
+    })), /*#__PURE__*/React.createElement("span", {
       className: `flex-1 font-medium ${done ? "line-through" : ""}`,
       style: {
         color: done ? COLORS.textMuted : COLORS.text
@@ -1498,12 +1501,16 @@ function RegulacionTab({
       background: COLORS.bg
     },
     className: "rounded-xl py-3 flex flex-col items-center gap-1 active:scale-95 transition-transform"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "text-2xl"
-  }, e.emoji), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement(PictoVisual, {
+    word: e.label,
+    emoji: e.emoji,
+    useIllustrations: data.useIllustrations !== false,
+    sizeClass: "w-9 h-9"
+  }), /*#__PURE__*/React.createElement("span", {
     className: "text-[11px] font-medium"
   }, e.label))))), pendingEmotion && /*#__PURE__*/React.createElement(IntensityModal, {
     emotion: pendingEmotion,
+    useIllustrations: data.useIllustrations !== false,
     onCancel: () => setPendingEmotion(null),
     onConfirm: intensity => saveEmotion(pendingEmotion, intensity)
   }), /*#__PURE__*/React.createElement("section", {
@@ -1571,9 +1578,12 @@ function RegulacionTab({
       background: triedToday[i] ? "#EEF3EF" : COLORS.bg
     },
     className: "w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-left"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "text-xl"
-  }, s.emoji), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement(PictoVisual, {
+    word: s.text,
+    emoji: s.emoji,
+    useIllustrations: data.useIllustrations !== false,
+    sizeClass: "w-7 h-7"
+  }), /*#__PURE__*/React.createElement("span", {
     className: "flex-1 text-sm font-medium"
   }, s.text), triedToday[i] && /*#__PURE__*/React.createElement(Check, {
     size: 16,
@@ -1584,6 +1594,7 @@ function RegulacionTab({
 }
 function IntensityModal({
   emotion,
+  useIllustrations,
   onCancel,
   onConfirm
 }) {
@@ -1599,9 +1610,12 @@ function IntensityModal({
     className: "w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl p-6"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2 mb-1"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "text-3xl"
-  }, emotion.emoji), /*#__PURE__*/React.createElement("h3", {
+  }, /*#__PURE__*/React.createElement(PictoVisual, {
+    word: emotion.label,
+    emoji: emotion.emoji,
+    useIllustrations: useIllustrations,
+    sizeClass: "w-9 h-9"
+  }), /*#__PURE__*/React.createElement("h3", {
     className: "font-semibold"
   }, emotion.label)), /*#__PURE__*/React.createElement("p", {
     className: "text-sm mb-5",
@@ -1829,9 +1843,12 @@ function SeguimientoTab({
   }, data.checkins.map(c => /*#__PURE__*/React.createElement("li", {
     key: c.id,
     className: "flex items-center gap-2 text-sm"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "text-lg"
-  }, c.emoji), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement(PictoVisual, {
+    word: c.emotion,
+    emoji: c.emoji,
+    useIllustrations: data.useIllustrations !== false,
+    sizeClass: "w-5 h-5"
+  }), /*#__PURE__*/React.createElement("span", {
     className: "flex-1"
   }, c.emotion), /*#__PURE__*/React.createElement(IntensityDots, {
     level: c.intensity
