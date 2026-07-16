@@ -443,9 +443,64 @@ async function storageSet(key, value) {
     localStorage.setItem(STORAGE_PREFIX + key, value);
   } catch (e) {/* silencioso */}
 }
+const ARASAAC_CACHE_PREFIX = "arasaacPicto_";
+async function getArasaacImageUrl(word) {
+  const cacheKey = ARASAAC_CACHE_PREFIX + word.toLowerCase().trim();
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) return cached === "null" ? null : cached;
+  } catch (e) {/* sin caché disponible */}
+  try {
+    const res = await fetch(`https://api.arasaac.org/api/pictograms/es/bestsearch/${encodeURIComponent(word)}`);
+    const json = await res.json();
+    const id = json && json[0] && json[0]._id;
+    const url = id ? `https://static.arasaac.org/pictograms/${id}/${id}_300.png` : null;
+    try {
+      localStorage.setItem(cacheKey, url === null ? "null" : url);
+    } catch (e) {/* silencioso */}
+    return url;
+  } catch (e) {
+    return null;
+  }
+}
+function PictoVisual({
+  word,
+  emoji,
+  useIllustrations,
+  sizeClass
+}) {
+  const [src, setSrc] = useState(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    setFailed(false);
+    if (!useIllustrations) {
+      setSrc(null);
+      return;
+    }
+    getArasaacImageUrl(word).then(url => {
+      if (!cancelled) setSrc(url);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [word, useIllustrations]);
+  if (useIllustrations && src && !failed) {
+    return /*#__PURE__*/React.createElement("img", {
+      src: src,
+      alt: word,
+      onError: () => setFailed(true),
+      className: `${sizeClass} object-contain`
+    });
+  }
+  return /*#__PURE__*/React.createElement("span", {
+    className: "text-3xl"
+  }, emoji);
+}
 function defaultProfileData() {
   return {
     level: 2,
+    useIllustrations: true,
     routines: JSON.parse(JSON.stringify(DEFAULT_ROUTINES)),
     routineDone: {},
     checkins: [],
@@ -778,7 +833,37 @@ function SettingsPanel({
     style: {
       color: COLORS.textMuted
     }
-  }, "Sencillo: menos categorías y toque único que habla al instante. Medio: frases cortas. Avanzado: vocabulario completo y frases largas."), !confirmDelete ? /*#__PURE__*/React.createElement("button", {
+  }, "Sencillo: menos categorías y toque único que habla al instante. Medio: frases cortas. Avanzado: vocabulario completo y frases largas."), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between mb-1"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    className: "text-sm font-medium"
+  }, "Pictogramas ilustrados"), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs",
+    style: {
+      color: COLORS.textMuted
+    }
+  }, "Usa imágenes reales del catálogo ARASAAC en vez de emoji. Si no hay conexión, se muestra el emoji.")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => onSave({
+      ...data,
+      useIllustrations: data.useIllustrations === false
+    }),
+    style: {
+      background: data.useIllustrations !== false ? COLORS.primary : COLORS.border
+    },
+    className: "w-12 h-7 rounded-full relative shrink-0 ml-3",
+    "aria-label": "Alternar pictogramas ilustrados"
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      left: data.useIllustrations !== false ? 22 : 3,
+      background: "#fff"
+    },
+    className: "absolute top-1 w-5 h-5 rounded-full transition-all"
+  }))), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs mb-6",
+    style: {
+      color: COLORS.textMuted
+    }
+  }, "Pictogramas de ARASAAC (Gobierno de Aragón), Creative Commons BY-NC-SA."), !confirmDelete ? /*#__PURE__*/React.createElement("button", {
     onClick: () => setConfirmDelete(true),
     style: {
       color: COLORS.danger
@@ -945,9 +1030,12 @@ function ComunicacionTab({
         src: p.image,
         alt: p.label,
         className: "w-11 h-11 object-cover rounded-xl"
-      }) : /*#__PURE__*/React.createElement("span", {
-        className: "text-3xl"
-      }, p.emoji), /*#__PURE__*/React.createElement("span", {
+      }) : /*#__PURE__*/React.createElement(PictoVisual, {
+        word: p.label,
+        emoji: p.emoji,
+        useIllustrations: data.useIllustrations !== false,
+        sizeClass: "w-11 h-11"
+      }), /*#__PURE__*/React.createElement("span", {
         className: "text-xs font-medium text-center leading-tight"
       }, p.label)), isCustom && /*#__PURE__*/React.createElement("button", {
         onClick: e => {
