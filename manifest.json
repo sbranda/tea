@@ -1,0 +1,15 @@
+{
+  "name": "Apoyo TEA - Comunicación, Rutinas y Regulación",
+  "short_name": "Apoyo TEA",
+  "description": "App familiar de apoyo para personas autistas: comunicación por pictogramas, rutinas visuales, regulación emocional/sensorial y seguimiento.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F5F7F3",
+  "theme_color": "#5E8B6E",
+  "orientation": "portrait-primary",
+  "lang": "es",
+  "icons": [
+    { "src": "icon192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
